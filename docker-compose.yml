@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Tor SOCKS5 Proxy for Kakos/Agathos Dark Web scraping
+  tor:
+    image: peterdavehello/tor-socks-proxy:latest
+    container_name: agatha-tor
+    ports:
+      - "9050:9150" # Maps local port 9050 to the container's 9150 Tor SOCKS port
+    restart: unless-stopped
+    networks:
+      - agatha_shadow_net
+
+  # I2P Router for deep web infiltration and communication
+  i2p:
+    image: geti2p/i2p:latest
+    container_name: agatha-i2p
+    ports:
+      - "4444:4444" # I2P HTTP Proxy
+      - "4445:4445" # I2P HTTPS Proxy
+      - "7657:7657" # I2P Router Console
+      - "7659:7659" # I2P SMTP
+      - "7660:7660" # I2P POP3
+    volumes:
+      - i2p_data:/i2p # Persist I2P router identity and keys
+    restart: unless-stopped
+    networks:
+      - agatha_shadow_net
+
+networks:
+  agatha_shadow_net:
+    driver: bridge
+
+volumes:
+  i2p_data:
