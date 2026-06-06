@@ -1,0 +1,84 @@
+name: Project Agatha CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # 1. Python Integration & Brain Testing
+  python-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pypdf cryptography torch transformers accelerate sentencepiece
+    - name: Run Integration Tests
+      run: |
+        python tests/integration_suite.py
+    - name: Run Ethics Pillar Tests
+      run: |
+        python test_ethics_pillar.py
+
+  # 2. Rust Kakos Engine Build & Test
+  rust-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Rust
+      uses: actions/setup-rust@v1
+      with:
+        rust-version: stable
+    - name: Build Kakos Engine
+      working-directory: ./agatha-kakos
+      run: cargo build --verbose
+    - name: Run Rust Tests
+      working-directory: ./agatha-kakos
+      run: cargo test --verbose
+
+  # 3. Next.js Bridge UI Build & Lint
+  nextjs-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: './agatha-bridge/package-lock.json'
+    - name: Install dependencies
+      working-directory: ./agatha-bridge
+      run: npm ci
+    - name: Lint Dashboard
+      working-directory: ./agatha-bridge
+      run: npm run lint
+    - name: Build Dashboard
+      working-directory: ./agatha-bridge
+      run: npm run build
+
+  # 4. Learning Ecosystem (Library) Validation
+  library-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Verify Library Structure
+      run: |
+        ls agatha-brain/library/gyms
+        ls agatha-brain/library/war_room
+    - name: Dry-run Librarian
+      run: |
+        # Verify orchestration logic can be imported
+        export PYTHONPATH=$PYTHONPATH:$(pwd)/agatha-brain/library
+        python -c "from the_librarian import TheLibrarian; print('Librarian Import Success')"
